@@ -2,11 +2,8 @@ package com.hooooong.musicplayer.view.player;
 
 import android.Manifest;
 import android.content.Intent;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,10 +13,13 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.data.Const;
 import com.hooooong.musicplayer.data.model.Music;
+import com.hooooong.musicplayer.util.Player;
 import com.hooooong.musicplayer.util.PlayerService;
+import com.hooooong.musicplayer.util.SeekBarThread;
 import com.hooooong.musicplayer.view.BaseActivity;
 import com.hooooong.musicplayer.view.player.adapter.PlayerPageAdapter;
 
@@ -27,11 +27,13 @@ import jp.wasabeef.glide.transformations.BlurTransformation;
 
 import static com.bumptech.glide.request.RequestOptions.bitmapTransform;
 
-public class PlayerActivity extends BaseActivity implements View.OnClickListener {
+public class PlayerActivity extends BaseActivity implements View.OnClickListener, SeekBarThread.IObserver {
 
-    private MediaPlayer mediaPlayer;
+    //private MediaPlayer mediaPlayer;
+
     private Music music;
     private int current = -1;
+    private int whereClick = -1;
 
     private Toolbar toolbar;
     private ViewPager viewPager;
@@ -48,8 +50,8 @@ public class PlayerActivity extends BaseActivity implements View.OnClickListener
     private ImageView imgNext;
     private ImageView imgPrev;
 
-    private int playButtonState = Const.STAT_PLAY;
-    Thread seekBarThread = null;
+    private Intent serviceIntent;
+    SeekBarThread seekBarThread = null;
 
     public PlayerActivity() {
         super(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE});
@@ -57,103 +59,69 @@ public class PlayerActivity extends BaseActivity implements View.OnClickListener
 
     @Override
     public void init() {
-        load();
-        initView();
-        initViewPager();
-        initControl();
-        start();
-    }
-
-    private void load() {
+        serviceIntent = new Intent(this, PlayerService.class);
         music = Music.getInstance();
         Intent intent = getIntent();
         if (intent != null) {
             current = intent.getIntExtra(Const.KEY_POSITION, 0);
+            whereClick = intent.getIntExtra(Const.KEY_CLICK, 0);
         }
+
+        initView();
+        checkPlayer();
     }
 
-    private void initControl() {
-        setPlayer();
-    }
-
-    private void setPlayer() {
-        clearPlayer();
-
-        // Position 에 해당하는 현재 아이템 꺼내기
-        Music.Item item = music.getItemList().get(current);
-        Uri musicUri = item.musicUri;
-
-        // Music Uri 를 통해 Player 초기화
-        mediaPlayer = MediaPlayer.create(this, musicUri);
-        mediaPlayer.setLooping(false);
-
-        setPlayerView(item);
-
-        seekBarThread = new Thread() {
-            @Override
-            public void run() {
-                if (mediaPlayer != null) {
-                    try {
-                        while (!this.isInterrupted()) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    seekBar.setProgress(mediaPlayer.getCurrentPosition());
-                                    textCurrentTime.setText(milliToSec(mediaPlayer.getCurrentPosition()));
-                                }
-                            });
-
-                            Thread.sleep(100);
-                        }
-                    } catch (InterruptedException e) {
-                        Log.e("Thread.isInterrupted", this.isInterrupted() + "");
-                        Log.e("Thread.isAlive()", this.isAlive() + "");
-                        Log.e("Thread.getName()", this.getName());
-                    }
-                }
+    void checkPlayer() {
+        // Play 중에 APP 을 실행하면 Button 과 View 를 변경해 줘야 한다.
+        // current 설정 및 Button 설정
+        // viewPager.setCurrentItem(current);
+        if(whereClick == 0){
+            // LIST 에서 클릭했을 경우
+            playerSet();
+            initViewPager();
+            playerStart();
+        }else{
+            // APP 을 클릭했을 경우
+            // 그 페이지로 시작하고
+            // 버튼 만 바꿔주면 된다.
+            if (Player.getInstance().getStatus() == Const.STAT_PLAY) {
+                // 시작 중이라면
+                togglePlayButton(Const.STAT_PLAY);
+            } else if (Player.getInstance().getStatus() == Const.STAT_PAUSE) {
+                // 일시정지 중이라면
+                togglePlayButton(Const.STAT_PAUSE);
             }
-        };
-        seekBarThread.start();
+            initViewPager();
+        }
+        initPlayerView();
     }
 
     /**
      * Player 에 관련된 View Setting
      */
-    private void setPlayerView(Music.Item item) {
-        // 화면 세팅
-        String duration = milliToSec(mediaPlayer.getDuration());
-        textDuration.setText(duration);
+    private void initPlayerView() {
+        Music.Item item = music.getItemList().get(current);
+
+        /*
+        seekBar.setMax(Player.getInstance().getDuration());
+        textDuration.setText(milliToSec(Player.getInstance().getDuration()));
         textCurrentTime.setText("00:00");
+        */
 
         // 배경 세팅
         Glide.with(this)
                 .load(item.albumUri)
+                .transition(new DrawableTransitionOptions())
                 .apply(bitmapTransform(new BlurTransformation(25)))
                 .into(imgAlbum);
-
         // Title, Artist 세팅
         textTitle.setText(item.title);
         textArtist.setText(item.artist);
-        // seekBar 세팅
-        seekBar.setMax(mediaPlayer.getDuration());
-    }
-
-    /**
-     * 1110101 -> 04:00 으로 변환하는 메소드
-     *
-     * @param milli
-     * @return
-     */
-    private String milliToSec(int milli) {
-        int sec = milli / 1000;
-        int min = sec / 60;
-        sec = sec % 60;
-
-        return java.lang.String.format("%02d", min) + ":" + java.lang.String.format("%02d", sec);
     }
 
     private void initView() {
         setContentView(R.layout.activity_player);
+
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         textTitle = toolbar.findViewById(R.id.textTitle);
@@ -194,11 +162,12 @@ public class PlayerActivity extends BaseActivity implements View.OnClickListener
             @Override
             public void onPageSelected(int position) {
                 current = position;
-                setPlayer();
-                if (playButtonState == Const.STAT_PLAY) {
-                    start();
-                }
+                initPlayerView();
+                playerSet();
 
+                if (Player.getInstance().getStatus() == Const.STAT_PLAY) {
+                    playerStart();
+                }
             }
 
             @Override
@@ -208,38 +177,28 @@ public class PlayerActivity extends BaseActivity implements View.OnClickListener
         });
     }
 
-    private void start() {
-        playButtonState = Const.STAT_PLAY;
-        mediaPlayer.start();
-        imgPlay.setBackgroundResource(R.drawable.ic_stop);
-    }
+    /**
+     * 1110101 -> 04:00 으로 변환하는 메소드
+     *
+     * @param milli
+     * @return
+     */
+    private String milliToSec(int milli) {
+        int sec = milli / 1000;
+        int min = sec / 60;
+        sec = sec % 60;
 
-    private void pause() {
-        playButtonState = Const.STAT_PAUSE;
-        mediaPlayer.pause();
-        imgPlay.setBackgroundResource(R.drawable.ic_play_arrow);
+        return java.lang.String.format("%02d", min) + ":" + java.lang.String.format("%02d", sec);
     }
-
-    private void clearPlayer() {
-        if (seekBarThread != null) {
-            seekBarThread.interrupt();
-        }
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-    }
-
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.imgPlay:
-                if (playButtonState == Const.STAT_PLAY) {
-                    // Player 중이라면
-                    pause();
+                if (Player.getInstance().getStatus() == Const.STAT_PLAY) {
+                    playerPause();
                 } else {
-                    start();
+                    playerStart();
                 }
                 break;
             case R.id.imgFf:
@@ -279,10 +238,63 @@ public class PlayerActivity extends BaseActivity implements View.OnClickListener
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        seekBarThread = SeekBarThread.getInstance();
+        seekBarThread.addObserver(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        seekBarThread.removeObserver(this);
+    }
+
+    @Override
     protected void onDestroy() {
-        clearPlayer();
         super.onDestroy();
     }
 
+    private void playerSet() {
+        serviceIntent.setAction(Const.ACTION_SET);
+        serviceIntent.putExtra(Const.KEY_POSITION, current);
+        startService(serviceIntent);
+    }
 
+    private void playerStart() {
+        serviceIntent.setAction(Const.ACTION_START);
+        startService(serviceIntent);
+        togglePlayButton(Const.STAT_PLAY);
+    }
+
+    private void playerPause() {
+        serviceIntent.setAction(Const.ACTION_PAUSE);
+        startService(serviceIntent);
+        togglePlayButton(Const.STAT_PAUSE);
+    }
+
+    private void playerStop() {
+        serviceIntent.setAction(Const.ACTION_STOP);
+        startService(serviceIntent);
+    }
+
+    private void togglePlayButton(int status) {
+        if (status == Const.STAT_PLAY) {
+            imgPlay.setBackgroundResource(R.drawable.ic_stop);
+        } else if (status == Const.STAT_PAUSE) {
+            imgPlay.setBackgroundResource(R.drawable.ic_play_arrow);
+        }
+    }
+
+    @Override
+    public void setProgress() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // 화면 세팅
+                seekBar.setProgress(Player.getInstance().getCurrentPosition());
+                textCurrentTime.setText(milliToSec(Player.getInstance().getCurrentPosition()));
+            }
+        });
+    }
 }

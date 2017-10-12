@@ -2,16 +2,16 @@ package com.hooooong.musicplayer.view.main;
 
 import android.Manifest;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.data.Const;
+import com.hooooong.musicplayer.data.model.Music;
+import com.hooooong.musicplayer.util.Player;
 import com.hooooong.musicplayer.view.BaseActivity;
 import com.hooooong.musicplayer.view.main.adapter.ListPagerAdapter;
-import com.hooooong.musicplayer.data.model.Music;
 import com.hooooong.musicplayer.view.player.PlayerActivity;
 
 import java.util.ArrayList;
@@ -31,14 +31,19 @@ public class MainActivity extends BaseActivity implements MusicFragment.OnListFr
     public void init() {
         setContentView(R.layout.activity_main);
 
-        // 볼룜 조절 버튼으로 미디어 음량만 조절하기 위한 설정
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
         load();
         initView();
         initTabLayout();
         initViewPager();
         initListener();
+        checkPlayer();
+    }
+
+    private void checkPlayer() {
+        // Player 가 정지상태만 아니라면 무조건 PlayerActivity 로 이동한다.
+        if(Player.getInstance().getStatus() != Const.STAT_STOP){
+            openPlayer(Player.getInstance().getCurrent(), 1);
+        }
     }
 
     private void initListener() {
@@ -89,11 +94,13 @@ public class MainActivity extends BaseActivity implements MusicFragment.OnListFr
     }
 
     @Override
-    public void openPlayer(int position) {
+    public void openPlayer(int position, int click) {
         Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
         // putExtra 의 String 값은 상수의 이름이기 때문에
         // class 를 만들어서
         intent.putExtra(Const.KEY_POSITION, position);
+        intent.putExtra(Const.KEY_CLICK, click);
         startActivity(intent);
     }
+
 }

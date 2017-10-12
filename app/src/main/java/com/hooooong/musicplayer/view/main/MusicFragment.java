@@ -91,6 +91,6 @@ public class MusicFragment extends Fragment {
     // Activity 에서 implements 하지 않으면 App 이 강제로 종료된다.
     public interface OnListFragmentInteractionListener {
         List<Music.Item> getList();
-        void openPlayer(int position);
+        void openPlayer(int position, int click);
     }
 }

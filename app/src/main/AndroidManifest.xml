@@ -23,7 +23,12 @@
         <activity
             android:name=".view.player.PlayerActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/NoTitleTheme"/>
+            android:theme="@style/NoTitleTheme" />
+
+        <service
+            android:name=".util.PlayerService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
