@@ -6,15 +6,14 @@
     android:layout_height="match_parent"
     tools:context="com.hooooong.musicplayer.view.player.PlayerActivity">
 
-
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="0dp"
-        android:layout_height="70dp"
+        android:layout_height="?attr/actionBarSize"
         android:layout_marginTop="24dp"
         android:background="@android:color/transparent"
         android:elevation="4dp"
-        android:layout_marginLeft="50dp"
+
         app:contentInsetStart="0dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -23,29 +22,32 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginLeft="52dp"
             android:gravity="center"
-            android:weightSum="3"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:weightSum="3">
 
             <TextView
                 android:id="@+id/textTitle"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
+                android:layout_marginTop="3dp"
                 android:layout_weight="1.8"
                 android:ellipsize="marquee"
                 android:gravity="center"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
-                android:textSize="22sp" />
+                android:textSize="23sp" />
 
             <TextView
                 android:id="@+id/textArtist"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginBottom="10dp"
                 android:layout_weight="1.2"
                 android:gravity="bottom|center"
-                android:textColor="@color/colorWhite" />
+                android:singleLine="true"
+                android:textColor="@color/colorWhite"
+                android:textSize="12sp" />
         </LinearLayout>
 
     </android.support.v7.widget.Toolbar>
@@ -55,12 +57,15 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:adjustViewBounds="true"
+        android:elevation="-1dp"
         android:scaleType="centerCrop"
         android:tint="@color/status_background_color"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
     <android.support.v4.view.ViewPager
         android:id="@+id/viewPager"
@@ -70,14 +75,13 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
     <RelativeLayout
         android:id="@+id/controller"
         android:layout_width="0dp"
-        android:layout_height="120dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_height="160dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -100,7 +104,7 @@
             android:layout_alignParentStart="true"
             android:layout_below="@+id/seekBar"
             android:layout_marginLeft="10dp"
-            android:text="00:00" />
+            android:textColor="@color/colorWhite" />
 
         <TextView
             android:id="@+id/textDuration"
@@ -110,52 +114,51 @@
             android:layout_alignParentRight="true"
             android:layout_below="@+id/seekBar"
             android:layout_marginRight="10dp"
-            android:text="99:99" />
+            android:textColor="@color/colorWhite" />
 
-        <ImageButton
-            android:id="@+id/btnPlay"
-            style="@android:style/Widget.DeviceDefault.ImageButton"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+        <ImageView
+            android:id="@+id/imgPlay"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            app:srcCompat="@drawable/ic_play_arrow" />
+            android:background="@drawable/ic_play_arrow" />
 
-        <ImageButton
-            android:id="@+id/btnFf"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toEndOf="@+id/btnPlay"
-            android:layout_toRightOf="@+id/btnPlay"
-            app:srcCompat="@drawable/ic_fast_forward" />
+        <ImageView
+            android:id="@+id/imgFf"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_alignTop="@+id/imgRew"
+            android:layout_toRightOf="@+id/imgPlay"
+            android:background="@drawable/ic_fast_forward" />
 
-        <ImageButton
-            android:id="@+id/btnRew"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toLeftOf="@+id/btnPlay"
-            android:layout_toStartOf="@+id/btnPlay"
-            app:srcCompat="@drawable/ic_fast_rewind" />
+        <ImageView
+            android:id="@+id/imgRew"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_alignTop="@+id/imgPlay"
+            android:layout_marginTop="25dp"
+            android:layout_toLeftOf="@+id/imgPlay"
+            android:layout_toStartOf="@+id/imgPlay"
+            android:background="@drawable/ic_fast_rewind" />
 
-        <ImageButton
-            android:id="@+id/btnPrev"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toLeftOf="@+id/btnRew"
-            android:layout_toStartOf="@+id/btnRew"
-            app:srcCompat="@drawable/ic_skip_previous" />
+        <ImageView
+            android:id="@+id/imgPrev"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_alignTop="@+id/imgRew"
+            android:layout_toLeftOf="@+id/imgRew"
+            android:layout_toStartOf="@+id/imgRew"
+            android:background="@drawable/ic_skip_previous" />
 
-        <ImageButton
-            android:id="@+id/btnNext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toEndOf="@+id/btnFf"
-            android:layout_toRightOf="@+id/btnFf"
-            app:srcCompat="@drawable/ic_skip_next" />
+        <ImageView
+            android:id="@+id/imgNext"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_alignTop="@+id/imgFf"
+            android:layout_toEndOf="@+id/imgFf"
+            android:layout_toRightOf="@+id/imgFf"
+            android:background="@drawable/ic_skip_next" />
     </RelativeLayout>
 
 </android.support.constraint.ConstraintLayout>

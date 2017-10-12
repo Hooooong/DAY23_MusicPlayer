@@ -9,8 +9,9 @@ import android.support.v4.view.ViewPager;
 
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.data.Const;
+import com.hooooong.musicplayer.view.BaseActivity;
 import com.hooooong.musicplayer.view.main.adapter.ListPagerAdapter;
-import com.hooooong.musicplayer.view.main.adapter.model.Music;
+import com.hooooong.musicplayer.data.model.Music;
 import com.hooooong.musicplayer.view.player.PlayerActivity;
 
 import java.util.ArrayList;

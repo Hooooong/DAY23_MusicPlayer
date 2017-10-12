@@ -10,7 +10,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.hooooong.musicplayer.R;
-import com.hooooong.musicplayer.view.main.adapter.model.Music;
+import com.hooooong.musicplayer.data.model.Music;
 
 import java.util.List;
 
@@ -38,12 +38,14 @@ public class PlayerPageAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
 
-        Music.Item item = musicList.get(position);
-
         View view = LayoutInflater.from(context).inflate(R.layout.item_player, null);
-
         ImageView imgAlbum = view.findViewById(R.id.imgAlbum);
+
+        Music.Item item = musicList.get(position);
+        // ImageView setting
         Glide.with(context).load(item.albumUri).apply(bitmapTransform(new CircleCrop())).into(imgAlbum);
+
+        // Title, Artist 세팅;
         /*TextView textTitle = view.findViewById(R.id.textTitle);
         textTitle.setSelected(true);
         textTitle.setText(item.title);

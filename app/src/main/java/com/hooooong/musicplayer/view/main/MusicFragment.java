@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.view.main.adapter.MyMusicRecyclerViewAdapter;
-import com.hooooong.musicplayer.view.main.adapter.model.Music;
+import com.hooooong.musicplayer.data.model.Music;
 
 import java.util.List;
 

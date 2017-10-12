@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.view.main.MusicFragment.OnListFragmentInteractionListener;
-import com.hooooong.musicplayer.view.main.adapter.model.Music;
+import com.hooooong.musicplayer.data.model.Music;
 
 import java.util.List;
 
@@ -30,11 +30,16 @@ public class MyMusicRecyclerViewAdapter extends RecyclerView.Adapter<MyMusicRecy
     }
 
     @Override
-    public void onBindViewHolder(final ViewHolder holder, final int position) {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.mItem = mValues.get(position);
         holder.mIdView.setText(mValues.get(position).id);
         holder.mContentView.setText(mValues.get(position).title);
+        holder.position = position;
 
+        // onBindViewHolder 에서 setOnClickListener 를 설정해주면
+        // List 를 Scroll 할 때마다 Listener 가 설정되므로
+        // 좋지않은 코드이다.
+        /*
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -43,7 +48,7 @@ public class MyMusicRecyclerViewAdapter extends RecyclerView.Adapter<MyMusicRecy
                     // fragment is attached to one) that an item has been selected.
                     //mListener.getList(holder.mItem);
 
-                    /*Pair[] pairs = new Pair[2];
+                    *//*Pair[] pairs = new Pair[2];
                     pairs[0] = new Pair<View, String>(textId, "textId");
                     pairs[1] = new Pair<View, String>(textName, "textName");
 
@@ -53,12 +58,12 @@ public class MyMusicRecyclerViewAdapter extends RecyclerView.Adapter<MyMusicRecy
                     Intent intent = new Intent(view.getContext(), DetailActivity.class);
                     intent.putExtra("textId", textId.getText());
                     intent.putExtra("textName", textName.getText());
-                    options.toBundle();*/
+                    options.toBundle();*//*
 
                     mListener.openPlayer(position);
                 }
             }
-        });
+        });*/
     }
 
     @Override
@@ -67,16 +72,23 @@ public class MyMusicRecyclerViewAdapter extends RecyclerView.Adapter<MyMusicRecy
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public final View mView;
-        public final TextView mIdView;
-        public final TextView mContentView;
-        public Music.Item mItem;
+
+
+        int position;
+        TextView mIdView;
+        TextView mContentView;
+        Music.Item mItem;
 
         public ViewHolder(View view) {
             super(view);
-            mView = view;
-            mIdView = (TextView) view.findViewById(R.id.id);
-            mContentView = (TextView) view.findViewById(R.id.content);
+            mIdView = view.findViewById(R.id.id);
+            mContentView = view.findViewById(R.id.content);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mListener.openPlayer(position);
+                }
+            });
         }
 
         @Override

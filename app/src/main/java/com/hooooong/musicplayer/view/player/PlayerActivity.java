@@ -1,18 +1,15 @@
 package com.hooooong.musicplayer.view.player;
 
+import android.Manifest;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Bundle;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -21,16 +18,18 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.hooooong.musicplayer.R;
 import com.hooooong.musicplayer.data.Const;
-import com.hooooong.musicplayer.view.main.adapter.model.Music;
+import com.hooooong.musicplayer.data.model.Music;
+import com.hooooong.musicplayer.util.PlayerService;
+import com.hooooong.musicplayer.view.BaseActivity;
 import com.hooooong.musicplayer.view.player.adapter.PlayerPageAdapter;
 
 import jp.wasabeef.glide.transformations.BlurTransformation;
 
 import static com.bumptech.glide.request.RequestOptions.bitmapTransform;
 
-public class PlayerActivity extends AppCompatActivity implements View.OnClickListener {
+public class PlayerActivity extends BaseActivity implements View.OnClickListener {
 
-    private MediaPlayer player;
+    private MediaPlayer mediaPlayer;
     private Music music;
     private int current = -1;
 
@@ -43,18 +42,21 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
     private TextView textDuration;
     private TextView textTitle;
     private TextView textArtist;
-    private ImageButton btnPlay;
-    private ImageButton btnFf;
-    private ImageButton btnRew;
-    private ImageButton btnNext;
-    private ImageButton btnPrev;
+    private ImageView imgPlay;
+    private ImageView imgFf;
+    private ImageView imgRew;
+    private ImageView imgNext;
+    private ImageView imgPrev;
+
     private int playButtonState = Const.STAT_PLAY;
     Thread seekBarThread = null;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public PlayerActivity() {
+        super(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE});
+    }
 
+    @Override
+    public void init() {
         load();
         initView();
         initViewPager();
@@ -65,59 +67,42 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
     private void load() {
         music = Music.getInstance();
         Intent intent = getIntent();
-        current = intent.getIntExtra(Const.KEY_POSITION, -1);
-    }
-
-    private void initControl() {
-        // 볼룜 조절 버튼으로 미디어 음량만 조절하기 위한 설정
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        if (current == 0) {
-            setPlayer();
+        if (intent != null) {
+            current = intent.getIntExtra(Const.KEY_POSITION, 0);
         }
     }
 
+    private void initControl() {
+        setPlayer();
+    }
+
     private void setPlayer() {
+        clearPlayer();
+
         // Position 에 해당하는 현재 아이템 꺼내기
         Music.Item item = music.getItemList().get(current);
         Uri musicUri = item.musicUri;
 
-        if (player != null) {
-            player.release();
-        }
-
-        if (seekBarThread != null) {
-            seekBarThread.interrupt();
-        }
-
         // Music Uri 를 통해 Player 초기화
-        player = MediaPlayer.create(this, musicUri);
-        player.setLooping(false);
+        mediaPlayer = MediaPlayer.create(this, musicUri);
+        mediaPlayer.setLooping(false);
 
-        // 화면 세팅
-        String duration = milliToSec(player.getDuration());
-        textDuration.setText(duration);
-        textCurrentTime.setText("00:00");
-        // 배경 세팅
-        Glide.with(this).load(item.albumUri).apply(bitmapTransform(new BlurTransformation(25))).into(imgAlbum);
-        // Title, Artist 세팅
-        textTitle.setText(item.title);
-        textArtist.setText(item.artist);
-        // seekBar 세팅
-        seekBar.setMax(player.getDuration());
+        setPlayerView(item);
 
         seekBarThread = new Thread() {
             @Override
             public void run() {
-                if (player != null) {
+                if (mediaPlayer != null) {
                     try {
-                        while (true) {
+                        while (!this.isInterrupted()) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    seekBar.setProgress(player.getCurrentPosition());
-                                    textCurrentTime.setText(milliToSec(player.getCurrentPosition()));
+                                    seekBar.setProgress(mediaPlayer.getCurrentPosition());
+                                    textCurrentTime.setText(milliToSec(mediaPlayer.getCurrentPosition()));
                                 }
                             });
+
                             Thread.sleep(100);
                         }
                     } catch (InterruptedException e) {
@@ -128,10 +113,37 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
         };
-
         seekBarThread.start();
     }
 
+    /**
+     * Player 에 관련된 View Setting
+     */
+    private void setPlayerView(Music.Item item) {
+        // 화면 세팅
+        String duration = milliToSec(mediaPlayer.getDuration());
+        textDuration.setText(duration);
+        textCurrentTime.setText("00:00");
+
+        // 배경 세팅
+        Glide.with(this)
+                .load(item.albumUri)
+                .apply(bitmapTransform(new BlurTransformation(25)))
+                .into(imgAlbum);
+
+        // Title, Artist 세팅
+        textTitle.setText(item.title);
+        textArtist.setText(item.artist);
+        // seekBar 세팅
+        seekBar.setMax(mediaPlayer.getDuration());
+    }
+
+    /**
+     * 1110101 -> 04:00 으로 변환하는 메소드
+     *
+     * @param milli
+     * @return
+     */
     private String milliToSec(int milli) {
         int sec = milli / 1000;
         int min = sec / 60;
@@ -142,7 +154,7 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
 
     private void initView() {
         setContentView(R.layout.activity_player);
-        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         textTitle = toolbar.findViewById(R.id.textTitle);
         textTitle.setSelected(true);
@@ -150,28 +162,30 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
         viewPager = (ViewPager) findViewById(R.id.viewPager);
         controller = (RelativeLayout) findViewById(R.id.controller);
 
-
         seekBar = (SeekBar) findViewById(R.id.seekBar);
         textCurrentTime = (TextView) findViewById(R.id.textCurrentTime);
         textDuration = (TextView) findViewById(R.id.textDuration);
-        btnPlay = (ImageButton) findViewById(R.id.btnPlay);
-        btnFf = (ImageButton) findViewById(R.id.btnFf);
-        btnRew = (ImageButton) findViewById(R.id.btnRew);
-        btnPrev = (ImageButton) findViewById(R.id.btnPrev);
-        btnNext = (ImageButton) findViewById(R.id.btnNext);
+        imgPlay = (ImageView) findViewById(R.id.imgPlay);
+        imgFf = (ImageView) findViewById(R.id.imgFf);
+        imgRew = (ImageView) findViewById(R.id.imgRew);
+        imgPrev = (ImageView) findViewById(R.id.imgPrev);
+        imgNext = (ImageView) findViewById(R.id.imgNext);
 
         imgAlbum = (ImageView) findViewById(R.id.imgAlbum);
 
-        btnPlay.setOnClickListener(this);
-        btnFf.setOnClickListener(this);
-        btnRew.setOnClickListener(this);
-        btnPrev.setOnClickListener(this);
-        btnNext.setOnClickListener(this);
+        imgPlay.setOnClickListener(this);
+        imgFf.setOnClickListener(this);
+        imgRew.setOnClickListener(this);
+        imgPrev.setOnClickListener(this);
+        imgNext.setOnClickListener(this);
     }
 
     private void initViewPager() {
         PlayerPageAdapter playerPageAdapter = new PlayerPageAdapter(this, music.getItemList());
         viewPager.setAdapter(playerPageAdapter);
+        if (current > 0) {
+            viewPager.setCurrentItem(current);
+        }
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -184,6 +198,7 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
                 if (playButtonState == Const.STAT_PLAY) {
                     start();
                 }
+
             }
 
             @Override
@@ -191,56 +206,50 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
 
             }
         });
-
-        if (current > -1) {
-            // 0 page 에서 current page 로 이동을 하는 개념이기 때문에
-            viewPager.setCurrentItem(current);
-        }
     }
 
     private void start() {
         playButtonState = Const.STAT_PLAY;
-        player.start();
-        btnPlay.setImageResource(R.drawable.ic_stop);
+        mediaPlayer.start();
+        imgPlay.setBackgroundResource(R.drawable.ic_stop);
     }
 
     private void pause() {
         playButtonState = Const.STAT_PAUSE;
-        player.pause();
-        btnPlay.setImageResource(R.drawable.ic_play_arrow);
+        mediaPlayer.pause();
+        imgPlay.setBackgroundResource(R.drawable.ic_play_arrow);
     }
 
-    @Override
-    protected void onDestroy() {
+    private void clearPlayer() {
         if (seekBarThread != null) {
             seekBarThread.interrupt();
         }
-
-        if (player != null) {
-            player.release();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
-        super.onDestroy();
     }
+
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.btnPlay:
+            case R.id.imgPlay:
                 if (playButtonState == Const.STAT_PLAY) {
-                    // Play 중이라면
+                    // Player 중이라면
                     pause();
                 } else {
                     start();
                 }
                 break;
-            case R.id.btnFf:
+            case R.id.imgFf:
                 break;
-            case R.id.btnRew:
+            case R.id.imgRew:
                 break;
-            case R.id.btnPrev:
+            case R.id.imgPrev:
                 viewPager.setCurrentItem(viewPager.getCurrentItem() - 1);
                 break;
-            case R.id.btnNext:
+            case R.id.imgNext:
                 viewPager.setCurrentItem(viewPager.getCurrentItem() + 1);
                 break;
         }
@@ -268,5 +277,12 @@ public class PlayerActivity extends AppCompatActivity implements View.OnClickLis
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    protected void onDestroy() {
+        clearPlayer();
+        super.onDestroy();
+    }
+
 
 }

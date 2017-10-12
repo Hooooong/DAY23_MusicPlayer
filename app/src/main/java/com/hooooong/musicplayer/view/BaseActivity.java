@@ -1,6 +1,7 @@
-package com.hooooong.musicplayer.view.main;
+package com.hooooong.musicplayer.view;
 
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -25,6 +26,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 볼룜 조절 버튼으로 미디어 음량만 조절하기 위한 설정
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
         // 0. App 버전 체크
         // 마시멜로우는 version_code 가 이니셜로 되어 있어야 한다.
         // 마시멜로우 이후에만 Permission 정책이 바뀌었기 때문에

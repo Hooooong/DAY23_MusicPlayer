@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@+id/imgAlbum"
-        android:layout_width="210dp"
-        android:layout_height="210dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         android:layout_alignParentTop="false"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"

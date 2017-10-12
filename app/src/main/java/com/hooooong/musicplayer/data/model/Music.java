@@ -1,4 +1,4 @@
-package com.hooooong.musicplayer.view.main.adapter.model;
+package com.hooooong.musicplayer.data.model;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -44,8 +44,8 @@ public class Music {
         Cursor cursor = resolver.query(uri, projections, null, null, projections[3] + " ASC");
 
         // 4. Query 결과를 담은 Cursor 를 통해 데이터 가져오기
+        itemList.clear();
         if (cursor != null) {
-            itemList.clear();
             while (cursor.moveToNext()) {
                 Item item = new Item();
                 item.id = getValue(cursor, projections[0]);
